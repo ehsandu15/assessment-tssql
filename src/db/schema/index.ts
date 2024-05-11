@@ -3,6 +3,7 @@ import {
   sqliteTable,
   text,
   uniqueIndex,
+  primaryKey,
   integer,
 } from "drizzle-orm/sqlite-core";
 const boolean = (col: string) => integer(col, { mode: "boolean" });
@@ -97,11 +98,11 @@ export const teamsRelations = relations(teams, ({ one }) => ({
 export const plans = sqliteTable("plans", {
   id: integer("id").primaryKey().notNull(),
   name: text("name").notNull(),
-  price: integer("price").notNull(), // Assuming price is stored as an integer (e.g., cents)
+  price: integer("price").notNull(), 
 });
 
 export const subscriptions = sqliteTable("subscriptions", {
-    id: integer("id").primaryKey().notNull(),
+    id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
     teamId: integer("teamId")
       .notNull()
       .references(() => teams.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -114,18 +115,30 @@ export const subscriptions = sqliteTable("subscriptions", {
 });
 
 export const subscriptionActivations = sqliteTable("subscriptionActivations", {
-  id: integer("id").primaryKey().notNull(),
+  teamId: integer("teamId")
+    .notNull()
+    .references(() => teams.id, { onDelete: "restrict", onUpdate: "restrict" }),
   subscriptionId: integer("subscriptionId")
       .notNull()
       .references(() => subscriptions.id, { onDelete: "restrict", onUpdate: "restrict" }),
   activatedAt: timestamp("activatedAt").notNull(),
   expiresAt: timestamp("expiresAt").notNull(),
-}, {});
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.teamId, table.subscriptionId] }),
+    pkWithCustomName: primaryKey({ name: 'pr', columns: [table.teamId, table.subscriptionId]}),
+  };
+});
 
 export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey().notNull(),
-  subscriptionId: integer("subscriptionId").foreignKey("subscriptions", "id").notNull(),
+  id: integer("id").primaryKey({ autoIncrement: true }).notNull(),
+  subscriptionId: integer("subscriptionId")
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: "restrict", onUpdate: "restrict" }),
+  teamId: integer("teamId")
+    .notNull()
+    .references(() => teams.id, { onDelete: "restrict", onUpdate: "restrict" }),
   paid: boolean("paid").default(false).notNull(),
   paidAt: timestamp("paidAt"),
   amount: integer("amount").notNull(),
-}, {});
+});
