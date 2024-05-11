@@ -13,6 +13,8 @@ export const users = sqliteTable(
   "users",
   {
     id: integer("id").primaryKey().notNull(),
+    teamId: integer("teamId")
+      .references(() => teams.id, { onDelete: "restrict", onUpdate: "restrict" }),
     email: text("email").notNull(),
     name: text("name").notNull(),
     hashedPassword: text("hashedPassword"),
@@ -96,7 +98,9 @@ export const teamsRelations = relations(teams, ({ one }) => ({
 }));
 
 export const plans = sqliteTable("plans", {
-  id: integer("id").primaryKey().notNull(),
+  id: integer("id")
+    .primaryKey({ autoIncrement: true })
+    .notNull(),
   name: text("name").notNull(),
   price: integer("price").notNull(), 
 });
